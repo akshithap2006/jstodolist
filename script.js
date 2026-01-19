@@ -1,99 +1,78 @@
-document.addEventListener("DOMContentLoaded", function () {
-  const todoForm = document.getElementById("todoForm");
-  const todoList = document.getElementById("todoList");
+const taskInput = document.getElementById("taskInput");
+const priority = document.getElementById("priority");
+const list = document.getElementById("list");
+const stats = document.getElementById("stats");
+const addBtn = document.getElementById("addBtn");
+const themeToggle = document.getElementById("themeToggle");
 
-  loadTasks();
+let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
 
-  todoForm.addEventListener("submit", function (e) {
-    e.preventDefault();
-    const taskValue = document.getElementById("listname").value.trim();
-    if (taskValue) {
-      addTask(taskValue);
-      document.getElementById("listname").value = "";
-      saveTasks();
-    }
+// Theme
+if (localStorage.getItem("theme") === "dark") {
+  document.body.classList.add("dark");
+}
+
+// Events
+addBtn.addEventListener("click", addTask);
+themeToggle.addEventListener("click", toggleTheme);
+
+function addTask() {
+  const text = taskInput.value.trim();
+  if (!text) return;
+
+  tasks.push({
+    text,
+    done: false,
+    priority: priority.value
   });
 
-  function addTask(taskValue) {
-    if (!taskValue) return;
-    const listItem = createListItem(taskValue);
-    todoList.appendChild(listItem);
-  }
-
-  function createListItem(taskValue, isCompleted = false) {
-    const listItem = document.createElement("li");
-    const taskSpan = document.createElement("span");
-    taskSpan.textContent = taskValue;
-    taskSpan.className = "task-text"; // Add a class for styling
-    listItem.appendChild(taskSpan);
-
-    const iconsDiv = document.createElement("div");
-    iconsDiv.className = "icons-container"; // Add a class for styling
-
-    const completedIcon = document.createElement("i");
-    completedIcon.className = isCompleted ? "fas fa-times" : "fas fa-check";
-    completedIcon.style.marginLeft = "10px";
-    completedIcon.onclick = function () {
-      const currentCompletedState =
-        taskSpan.style.textDecoration === "line-through";
-      taskSpan.style.textDecoration = currentCompletedState
-        ? "none"
-        : "line-through";
-      completedIcon.className = currentCompletedState
-        ? "fas fa-check"
-        : "fas fa-times";
-      saveTasks();
-    };
-    listItem.appendChild(completedIcon);
-
-    if (isCompleted) {
-      taskSpan.style.textDecoration = "line-through";
-    }
-
-    const deleteIcon = document.createElement("i");
-    deleteIcon.className = "fas fa-trash-alt";
-    deleteIcon.style.marginLeft = "10px";
-    deleteIcon.onclick = function () {
-      todoList.removeChild(listItem);
-      saveTasks();
-    };
-    listItem.appendChild(deleteIcon);
-
-    const updateIcon = document.createElement("i");
-    updateIcon.className = "fas fa-edit";
-    updateIcon.style.marginLeft = "10px";
-    updateIcon.onclick = function () {
-      const updatedValue = prompt("Update your task:", taskValue);
-      if (updatedValue) {
-        taskSpan.textContent = updatedValue;
-        saveTasks();
-      }
-    };
-    listItem.appendChild(updateIcon);
-
-    return listItem;
-  }
-
-  function saveTasks() {
-    const tasks = [];
-    for (let i = 0; i < todoList.children.length; i++) {
-      const taskText =
-        todoList.children[i].getElementsByTagName("span")[0].textContent;
-      const isCompleted =
-        todoList.children[i].getElementsByTagName("span")[0].style
-          .textDecoration === "line-through";
-      tasks.push({ text: taskText, completed: isCompleted });
-    }
-    localStorage.setItem("tasks", JSON.stringify(tasks));
-  }
-
-  function loadTasks() {
-    const tasks = JSON.parse(localStorage.getItem("tasks"));
-    if (tasks) {
-      tasks.forEach((task) => {
-        const listItem = createListItem(task.text, task.completed);
-        todoList.appendChild(listItem);
-      });
-    }
+  taskInput.value = "";
+  save();
+  render();
 }
-});
+
+function toggleTask(index) {
+  tasks[index].done = !tasks[index].done;
+  save();
+  render();
+}
+
+function deleteTask(index) {
+  tasks.splice(index, 1);
+  save();
+  render();
+}
+
+function toggleTheme() {
+  document.body.classList.toggle("dark");
+  localStorage.setItem(
+    "theme",
+    document.body.classList.contains("dark") ? "dark" : "light"
+  );
+}
+
+function save() {
+  localStorage.setItem("tasks", JSON.stringify(tasks));
+}
+
+function render() {
+  list.innerHTML = "";
+  let completed = 0;
+
+  tasks.forEach((task, index) => {
+    if (task.done) completed++;
+
+    list.innerHTML += `
+      <li class="${task.done ? "completed" : ""}">
+        <span onclick="toggleTask(${index})">${task.text}</span>
+        <span class="priority ${task.priority}">${task.priority}</span>
+        <button onclick="deleteTask(${index})">🗑️</button>
+      </li>
+    `;
+  });
+
+  stats.textContent =
+    `Total: ${tasks.length} | Completed: ${completed} | Pending: ${tasks.length - completed}`;
+}
+
+render();
