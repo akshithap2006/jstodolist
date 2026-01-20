@@ -21,7 +21,8 @@ Delete tasks that are no longer required.
 Local Storage Support
 Automatically saves tasks to ensure they persist across sessions.
 
-How to Use 
+How to Use
+
 ➕ Creating a Task
 
 Enter the task name in the input field.
